@@ -1,0 +1,141 @@
+* {
+  margin: 0;
+  padding: 0;
+}
+
+ul {
+  list-style-type: none;
+}
+
+img {
+  vertical-align: top;
+}
+
+.carousel {
+  position: relative;
+  width: 1000px;
+  margin: 0 auto;
+  border: 1px solid #000;
+
+  &-itemsContainer {
+    overflow: hidden;
+  }
+
+  &-items {
+    display: flex;
+    transition: transform .2s ease-in-out;
+
+    > li:not(:last-child) {
+      margin-right: 20px;
+    }
+  }
+
+  &-indicator {
+    position: absolute;
+    display: flex;
+    width: 100%;
+    padding-top: 20px;
+    justify-content: center;
+
+    li {
+      &:not(:last-child) {
+        margin-right: 15px;
+      }
+
+      &.is-active {
+        a {
+          background-color: orange;
+        }
+      }
+      
+      a {
+        display: block;
+        width: 15px;
+        height: 15px;
+        background-color: #ccc;
+        border-radius: 50%;
+      }
+    }
+  }
+
+  &-btns {
+    opacity: 0;
+    visibility: hidden;
+    transition: .2s ease;
+
+    > li {
+      a {
+        position: absolute;
+        top: 0;
+        bottom: 0;
+        margin: auto;
+        z-index: 10;
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        background-color: #fff;
+        box-shadow: 0 2px 8px rgba(#000, .2);
+        opacity: 0.8;
+        transition: .2s ease;
+
+        &:hover {
+          opacity: 1;
+        }
+
+        &::after {
+          position: absolute;
+          top: 0;
+          right: 0;
+          bottom: 0;
+          left: 0;
+          margin: auto;
+          display: block;
+          width: 8px;
+          height: 8px;
+          border-top: 2px solid #333;
+          border-right: 2px solid #333;
+          content: '';
+        }
+      }
+
+      &.prev {
+        a {
+          left: -40px;
+
+          &::after {
+            transform: rotate(-135deg);
+          }
+        }
+      }
+
+      &.next {
+        a {
+          right: -40px;
+
+          &::after {
+            transform: rotate(45deg);
+          }
+        }
+      }
+    }
+
+    &.is-active {
+      opacity: 1;
+      visibility: visible;
+
+      > li {
+        &.prev {
+          a {
+            left: -20px;
+          }
+        }
+
+        &.next {
+          a {
+            right: -20px;
+          }
+        }
+      }
+    }
+  }
+}
