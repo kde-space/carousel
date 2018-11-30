@@ -27,11 +27,14 @@ function createCarouselItemsHtml(json) {
 class Carousel {
   constructor(urlRequest, container) {
     this.carouselContainer = container;
-    this.carouselItemsConteiner = null;
-    this.carouselContainerWidth = null;
     this.carouselItems = null;
     this.indicators = null;
     this.btns = null;
+    this.carouselItemsContainer = null;
+    this.carouselMoveElement = null;
+    this.carouselContainerWidth = null;
+    this.carouselItemsWidths = [];
+    this.currentIndex = 0;
     this.init(urlRequest);
   }
 
@@ -41,14 +44,19 @@ class Carousel {
     this.carouselContainer.innerHTML = html;
     this.setCarouselItemsContainerToProps();
     this.setCarouselItemsToProp();
-    this.setIndicator();
-    this.setBtns();
+    this.setCarouselItemsWidths();
+    this.createIndicator();
+    this.createBtns();
+
+    // this.adEvent();
+    this.move(2);
   }
 
   setCarouselItemsContainerToProps() {
     const itemsContainer = this.carouselContainer.querySelector('.carousel-itemsContainer');
     if (!itemsContainer) return;
-    this.itemsContainer = itemsContainer;
+    this.carouselItemsContainer = itemsContainer;
+    this.carouselMoveElement = itemsContainer.querySelector('.carousel-items');
   }
 
   setCarouselItemsToProp() {
@@ -57,7 +65,19 @@ class Carousel {
     this.carouselItems = items;
   }
 
-  setIndicator() {
+  setCarouselItemsWidths() {
+    const items = this.carouselItems;
+    const resultWidths = [];
+    Array.prototype.slice.call(items).forEach(item => {
+      const width = item.clientWidth;
+      const margin = parseInt(window.getComputedStyle(item).marginRight, 10);
+      const itemOuterWidth = width + margin;
+      resultWidths.push(itemOuterWidth);
+    });
+    this.carouselItemsWidths = resultWidths;
+  }
+
+  createIndicator() {
     const totalItemCount = this.totalItemCount;
     const ul = document.createElement('ul');
     ul.className = 'carousel-indicator';
@@ -65,16 +85,16 @@ class Carousel {
       ${(() => {
         let result = '';
         for (let i = 0; i < totalItemCount; i++) {
-          result += `<li><a href="#"></a></li>`;
+          result += `<li class="${i === this.currentIndex ? 'is-active' : ''}"><a href="#"></a></li>`;
         }
         return result;
       })()}`;
     ul.innerHTML = liHtml;
-    this.itemsContainer.insertAdjacentElement('afterend', ul);
+    this.carouselItemsContainer.insertAdjacentElement('afterend', ul);
     this.indicators = ul;
   }
 
-  setBtns() {
+  createBtns() {
     const ul = document.createElement('ul');
     ul.className = 'carousel-btns';
     const liHtml = `
@@ -85,8 +105,24 @@ class Carousel {
     this.btns = ul;
   }
 
+  move(index) {
+    if (index < 0 || index >= this.totalItemCount) return;
+    let position;
+    if (index == 0) {
+      position = 0;
+    } else {
+      const ary = this.carouselItemsWidths.slice(0, index);
+      position = ary.reduce((prev, current) => prev + current);
+    }
+    this.carouselMoveElement.style.transform = `translateX(-${position}px)`;
+  }
+
   get totalItemCount() {
     return this.carouselItems.length;
+  }
+
+  get totalCarouselItemsWidth() {
+    return this.carouselItemsWidths.reduce((prev, current) => prev + current);
   }
 }
 
