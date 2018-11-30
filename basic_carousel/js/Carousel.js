@@ -10,20 +10,6 @@ async function fetchJson(url) {
   }
 }
 
-function getContainerElement() {
-  return new Promise((resolve, reject) => {
-    document.addEventListener('DOMContentLoaded', () => {
-      const target = document.getElementsByClassName('js-carousel')[0];
-      if (!target) {
-        reject(new Error('target is not defined.'));
-        return;
-      }
-      resolve(target);
-    });
-  });
-}
-
-
 /**
  * カルーセルアイテムのHTML作成
  * @param {Object} json 
@@ -39,18 +25,68 @@ function createCarouselItemsHtml(json) {
 
 
 class Carousel {
-  constructor(urlRequest) {
-    this.items = [];
-    this.container = null;
+  constructor(urlRequest, container) {
+    this.carouselContainer = container;
+    this.carouselItemsConteiner = null;
+    this.carouselContainerWidth = null;
+    this.carouselItems = null;
+    this.indicators = null;
+    this.btns = null;
     this.init(urlRequest);
   }
 
   async init(url) {
-    const [json, containerElement] = await Promise.all([fetchJson(url), getContainerElement()]);
+    const json = await fetchJson(url);
     const html = createCarouselItemsHtml(json);
-    console.log(html);
-    console.log(containerElement);
-    containerElement.innerHTML = html;
+    this.carouselContainer.innerHTML = html;
+    this.setCarouselItemsContainerToProps();
+    this.setCarouselItemsToProp();
+    this.setIndicator();
+    this.setBtns();
+  }
+
+  setCarouselItemsContainerToProps() {
+    const itemsContainer = this.carouselContainer.querySelector('.carousel-itemsContainer');
+    if (!itemsContainer) return;
+    this.itemsContainer = itemsContainer;
+  }
+
+  setCarouselItemsToProp() {
+    const items = this.carouselContainer.getElementsByTagName('li');
+    if (items.length <= 0) return;
+    this.carouselItems = items;
+  }
+
+  setIndicator() {
+    const totalItemCount = this.totalItemCount;
+    const ul = document.createElement('ul');
+    ul.className = 'carousel-indicator';
+    const liHtml = `
+      ${(() => {
+        let result = '';
+        for (let i = 0; i < totalItemCount; i++) {
+          result += `<li><a href="#"></a></li>`;
+        }
+        return result;
+      })()}`;
+    ul.innerHTML = liHtml;
+    this.itemsContainer.insertAdjacentElement('afterend', ul);
+    this.indicators = ul;
+  }
+
+  setBtns() {
+    const ul = document.createElement('ul');
+    ul.className = 'carousel-btns';
+    const liHtml = `
+    <li class="prev"><a href="#"></a></li>
+    <li class="next"><a href="#"></a></li>`;
+    ul.innerHTML = liHtml;
+    this.indicators.insertAdjacentElement('afterend', ul);
+    this.btns = ul;
+  }
+
+  get totalItemCount() {
+    return this.carouselItems.length;
   }
 }
 
