@@ -16,11 +16,11 @@ async function fetchJson(url) {
  */
 function createCarouselItemsHtml(json) {
   return `
-  <div class="carousel-itemsContainer">
-    <ul class="carousel-items">
-      ${json.map(item => `<li><a href="${item.linkUrl}"><img src="${item.imgPath}"></a></li>`).join('\n')}
-    </ul>
-  </div>`;
+    <div class="carousel-itemsContainer">
+      <ul class="carousel-items">
+        ${json.map(item => `<li><a href="${item.linkUrl}"><img src="${item.imgPath}"></a></li>`).join('\n')}
+      </ul>
+    </div>`;
 }
 
 
@@ -29,7 +29,8 @@ class Carousel {
     this.carouselContainer = container;
     this.carouselItems = null;
     this.indicators = null;
-    this.btns = null;
+    this.prevBtn = null;
+    this.nextBtn = null;
     this.carouselItemsContainer = null;
     this.carouselMoveElement = null;
     this.carouselContainerWidth = null;
@@ -40,19 +41,24 @@ class Carousel {
 
   async init(url) {
     const json = await fetchJson(url);
-    const html = createCarouselItemsHtml(json);
-    this.carouselContainer.innerHTML = html;
-    this.setCarouselItemsContainerToProps();
-    this.setCarouselItemsToProp();
-    this.setCarouselItemsWidths();
+    this.createCarouselMainContents(json)
     this.createIndicator();
     this.createBtns();
+    this.updateBtns(this.currentIndex);
 
-    // this.adEvent();
-    this.move(2);
+    this.adEvent();
+    // this.move();
   }
 
-  setCarouselItemsContainerToProps() {
+  createCarouselMainContents(json) {
+    const html = createCarouselItemsHtml(json);
+    this.carouselContainer.innerHTML = html;
+    this.setCarouselItemsContainerToProp();
+    this.setCarouselItemsToProp();
+    this.setCarouselItemsWidths();
+  }
+
+  setCarouselItemsContainerToProp() {
     const itemsContainer = this.carouselContainer.querySelector('.carousel-itemsContainer');
     if (!itemsContainer) return;
     this.carouselItemsContainer = itemsContainer;
@@ -60,7 +66,7 @@ class Carousel {
   }
 
   setCarouselItemsToProp() {
-    const items = this.carouselContainer.getElementsByTagName('li');
+    const items = this.carouselMoveElement.getElementsByTagName('li');
     if (items.length <= 0) return;
     this.carouselItems = items;
   }
@@ -98,23 +104,62 @@ class Carousel {
     const ul = document.createElement('ul');
     ul.className = 'carousel-btns';
     const liHtml = `
-    <li class="prev"><a href="#"></a></li>
-    <li class="next"><a href="#"></a></li>`;
+      <li class="prev is-none"><a href="#"></a></li>
+      <li class="next is-none"><a href="#"></a></li>`;
     ul.innerHTML = liHtml;
     this.indicators.insertAdjacentElement('afterend', ul);
-    this.btns = ul;
+    this.prevBtn = ul.querySelector('.prev');
+    this.nextBtn = ul.querySelector('.next');
+  }
+
+  updateBtns(index) {
+    if (index !== 0) {
+      this.prevBtn.classList.remove('is-none');
+    } else {
+      this.prevBtn.classList.add('is-none');
+    }
+    if (index !== this.totalItemCount - 1) {
+      this.nextBtn.classList.remove('is-none');
+    } else {
+      this.nextBtn.classList.add('is-none');
+    }
+  }
+
+  adEvent() {
+    const carouselContainer = this.carouselContainer;
+    const prevBtn = this.prevBtn;
+    const nextBtn = this.nextBtn;
+    carouselContainer.addEventListener('mouseover', (e) => {
+      console.log('mouseover');
+      prevBtn.classList.add('is-active');
+      nextBtn.classList.add('is-active');
+    });
+    carouselContainer.addEventListener('mouseout', (e) => {
+      console.log('mouseout');
+      prevBtn.classList.remove('is-active');
+      nextBtn.classList.remove('is-active');
+    });
+
+    nextBtn.addEventListener('click', (e) => {
+      e.preventDefault();
+      const nextIndex = this.currentIndex + 1;
+      this.move(nextIndex);
+    });
   }
 
   move(index) {
     if (index < 0 || index >= this.totalItemCount) return;
     let position;
-    if (index == 0) {
+    if (index === 0) {
       position = 0;
     } else {
-      const ary = this.carouselItemsWidths.slice(0, index);
-      position = ary.reduce((prev, current) => prev + current);
+      const itemsHasDistance = this.carouselItemsWidths.slice(0, index);
+      console.log(itemsHasDistance);
+      position = itemsHasDistance.reduce((prev, current) => prev + current);
     }
     this.carouselMoveElement.style.transform = `translateX(-${position}px)`;
+    this.currentIndex = index;
+    this.updateBtns(index);
   }
 
   get totalItemCount() {

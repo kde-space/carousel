@@ -1,0 +1,26 @@
+.is-none {
+  display: none !important;
+}
+
+.container {
+  position: relative;
+  width: 500px;
+  height: 200px;
+  margin: 0 auto;
+  border: 1px solid #000;
+
+  .btn {
+    position: absolute;
+    top: 0;
+    right: 10px;
+    bottom: 0;
+    width: 200px;
+    height: 50px;
+    margin: auto;
+    background-color: tomato;
+
+    &.is-active {
+      background-color: skyblue;
+    }
+  }
+}
