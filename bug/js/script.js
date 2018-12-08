@@ -1,42 +1,34 @@
 'use strict';
 
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('DOMContentLoaded', function () {
   const container = document.querySelector('.container');
   const btn = container.querySelector('.btn');
-  
-  container.addEventListener('mouseover', function(e) {
-    if (container.contains(e.relatedTarget) || e.relatedTarget === null) return
-    console.log('container mouseover');
+
+  container.addEventListener('mouseover', function (e) {
+    if (container.contains(e.relatedTarget) ||
+      (e.relatedTarget === null && e.target === btn)) return;
     btn.classList.remove('is-none');
   });
-  
-  container.addEventListener('mouseout', function(e) {
-    // console.log('target', e.target);
-    // console.log('relatedTarget', e.relatedTarget);
-    if (container.contains(e.relatedTarget) || e.relatedTarget === null) return
-    console.log('container mouseout');
+
+  container.addEventListener('mouseout', function (e) {
+    if (container.contains(e.relatedTarget) ||
+      (e.relatedTarget === null && e.target === btn)) return;
     btn.classList.add('is-none');
   });
 
-  btn.addEventListener('click', function(e) {
-    e.stopPropagation();
-    e.preventDefault();
-    console.log('click');
-  })
+  btn.addEventListener('click', function (e) {
+    console.log('btn clicked');
+  });
 
-  btn.addEventListener('mouseover', function(e) {
-    if (!container.contains(e.relatedTarget)) return;
-    // console.log('target', e.target);
-    // console.log('relatedTarget', e.relatedTarget);
+  btn.addEventListener('mouseover', function (e) {
     e.stopPropagation();
-    console.log('btn mouseover');
+    if (e.relatedTarget === null) return;
     btn.classList.add('is-active');
   });
 
-  btn.addEventListener('mouseout', function(e) {
-    if (!container.contains(e.relatedTarget)) return;
+  btn.addEventListener('mouseout', function (e) {
     e.stopPropagation();
-    console.log('btn mouseout');
+    if (e.relatedTarget === null) return;
     btn.classList.remove('is-active');
   });
 });
