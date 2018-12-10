@@ -39,23 +39,16 @@ class Carousel {
     this.init(urlRequest);
   }
 
-  async init(url) {
-    const json = await fetchJson(url);
-    this.createCarouselMainContents(json)
-    this.createIndicator();
-    this.createBtns();
-    this.updateBtns(this.currentIndex);
-
-    this.adEvent();
-    // this.move();
+  get totalItemCount() {
+    return this.carouselItems.length;
   }
 
-  createCarouselMainContents(json) {
-    const html = createCarouselItemsHtml(json);
-    this.carouselContainer.innerHTML = html;
-    this.setCarouselItemsContainerToProp();
-    this.setCarouselItemsToProp();
-    this.setCarouselItemsWidths();
+  get totalCarouselItemsWidth() {
+    return this.carouselItemsWidths.reduce((prev, current) => prev + current);
+  }
+
+  get isSettedCarouselItemsWidths() {
+    return this.carouselItemsWidths.length !== 0;
   }
 
   setCarouselItemsContainerToProp() {
@@ -71,16 +64,11 @@ class Carousel {
     this.carouselItems = items;
   }
 
-  setCarouselItemsWidths() {
-    const items = this.carouselItems;
-    const resultWidths = [];
-    Array.prototype.slice.call(items).forEach(item => {
-      const width = item.clientWidth;
-      const margin = parseInt(window.getComputedStyle(item).marginRight, 10);
-      const itemOuterWidth = width + margin;
-      resultWidths.push(itemOuterWidth);
-    });
-    this.carouselItemsWidths = resultWidths;
+  createCarouselMainContents(json) {
+    const html = createCarouselItemsHtml(json);
+    this.carouselContainer.innerHTML = html;
+    this.setCarouselItemsContainerToProp();
+    this.setCarouselItemsToProp();
   }
 
   createIndicator() {
@@ -124,27 +112,18 @@ class Carousel {
       this.nextBtn.classList.add('is-none');
     }
   }
-
-  adEvent() {
-    const carouselContainer = this.carouselContainer;
-    const prevBtn = this.prevBtn;
-    const nextBtn = this.nextBtn;
-    carouselContainer.addEventListener('mouseover', (e) => {
-      console.log('mouseover');
-      prevBtn.classList.add('is-active');
-      nextBtn.classList.add('is-active');
+  
+  setCarouselItemsWidths() {
+    const items = this.carouselItems;
+    const resultWidths = [];
+    Array.prototype.slice.call(items).forEach(item => {
+      const width = item.clientWidth;
+      const margin = parseInt(window.getComputedStyle(item).marginRight, 10);
+      const itemOuterWidth = width + margin;
+      resultWidths.push(itemOuterWidth);
     });
-    carouselContainer.addEventListener('mouseout', (e) => {
-      console.log('mouseout');
-      prevBtn.classList.remove('is-active');
-      nextBtn.classList.remove('is-active');
-    });
-
-    nextBtn.addEventListener('click', (e) => {
-      e.preventDefault();
-      const nextIndex = this.currentIndex + 1;
-      this.move(nextIndex);
-    });
+    console.log('resultWidths :', resultWidths);
+    this.carouselItemsWidths = resultWidths;
   }
 
   move(index) {
@@ -162,12 +141,54 @@ class Carousel {
     this.updateBtns(index);
   }
 
-  get totalItemCount() {
-    return this.carouselItems.length;
+  listener(type) {
+    const onceSetCarouselItemsWidths = () => {
+      if (this.isSettedCarouselItemsWidths) return;
+      this.setCarouselItemsWidths();
+    };
+
+    const listenerClick = (target) => {
+      return (e) => {
+        e.preventDefault();
+        onceSetCarouselItemsWidths();
+        const nextIndex = target === 'next' ? this.currentIndex + 1 : this.currentIndex - 1;
+        this.move(nextIndex);
+      }
+    };
+
+    const func = {
+      containerMouseover: (e) => {
+        console.log('mouseover');
+        this.prevBtn.classList.add('is-active');
+        this.nextBtn.classList.add('is-active');
+      },
+      containerMouseout: (e) => {
+        console.log('mouseout');
+        this.prevBtn.classList.remove('is-active');
+        this.nextBtn.classList.remove('is-active');
+      },
+      nextBtnClick: listenerClick('next'),
+      prevBtnClick: listenerClick('prev')
+    }
+    return func[type];
   }
 
-  get totalCarouselItemsWidth() {
-    return this.carouselItemsWidths.reduce((prev, current) => prev + current);
+  adListener() {
+    const carouselContainer = this.carouselContainer;
+    // carouselContainer.addEventListener('mouseover', this.handleEvent('containerMouseover').bind(this));
+    carouselContainer.addEventListener('mouseover', this.listener('containerMouseover'));
+    carouselContainer.addEventListener('mouseout', this.listener('containerMouseout'));
+    this.nextBtn.addEventListener('click', this.listener('nextBtnClick'));
+    this.prevBtn.addEventListener('click', this.listener('prevBtnClick'));
+  }
+
+  async init(url) {
+    const json = await fetchJson(url);
+    this.createCarouselMainContents(json)
+    this.createIndicator();
+    this.createBtns();
+    this.updateBtns(this.currentIndex);
+    this.adListener();
   }
 }
 
