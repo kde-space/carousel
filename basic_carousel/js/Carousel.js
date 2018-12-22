@@ -1,3 +1,5 @@
+'use strict';
+
 async function fetchJson(url) {
   try {
     const res = await fetch(url);
@@ -23,7 +25,6 @@ function createCarouselItemsHtml(json) {
     </div>`;
 }
 
-
 class Carousel {
   constructor(urlRequest, container) {
     this.carouselContainer = container;
@@ -41,18 +42,54 @@ class Carousel {
     this.init(urlRequest);
   }
 
+  /**
+   * カルーセル要素の数を取得
+   */
   get totalItemCount() {
     return this.carouselItems.length;
   }
 
+  /**
+   * カルーセル全体の横幅取得
+   */
   get totalCarouselItemsWidth() {
     return this.carouselItemsWidths.reduce((prev, current) => prev + current);
   }
 
+  /**
+   * カルーセル要素群の横幅取得が完了したか
+   */
   get isSettedCarouselItemsWidths() {
     return this.carouselItemsWidths.length !== 0;
   }
 
+  /**
+   * カルーセル要素群の横幅を取得
+   */
+  setCarouselItemsWidths() {
+    const items = this.carouselItems;
+    const resultWidths = [];
+    Array.prototype.slice.call(items).forEach(item => {
+      const width = item.clientWidth;
+      const margin = parseInt(window.getComputedStyle(item).marginRight, 10);
+      const itemOuterWidth = width + margin;
+      resultWidths.push(itemOuterWidth);
+    });
+    this.carouselItemsWidths = resultWidths;
+  }
+
+  /**
+   * カルーセル要素群の横幅を取得。一度だけ実行
+   */
+  onceSetCarouselItemsWidths() {
+    if (this.isSettedCarouselItemsWidths) return;
+    this.setCarouselItemsWidths();
+  }
+
+
+  /**
+   * thisから参照できるようにカルーセル要素群をプロパティに設定
+   */
   setCarouselItemsContainerToProp() {
     const itemsContainer = this.carouselContainer.querySelector('.carousel-itemsContainer');
     if (!itemsContainer) return;
@@ -60,6 +97,9 @@ class Carousel {
     this.carouselMoveElement = itemsContainer.querySelector('.carousel-items');
   }
 
+  /**
+   * thisから参照できるようにカルーセルの要素とアンカー要素をプロパティに設定
+   */
   setCarouselItemsAndAnchorsToProp() {
     const items = this.carouselMoveElement.getElementsByTagName('li');
     const anchors = this.carouselMoveElement.getElementsByTagName('a');
@@ -68,6 +108,10 @@ class Carousel {
     this.carouselItemAnchors = Array.prototype.slice.call(anchors);
   }
 
+  /**
+   * カルーセルのメイン部分要素の作成
+   * @param {object} json 
+   */
   createCarouselMainContents(json) {
     const html = createCarouselItemsHtml(json);
     this.carouselContainer.innerHTML = html;
@@ -75,10 +119,13 @@ class Carousel {
     this.setCarouselItemsAndAnchorsToProp();
   }
 
-  updateTabIndex(currentIndex) {
+  /**
+   * 表示されているカルーセル要素だけタブでフォーカス当たるようにする
+   */
+  updateTabIndex() {
     const carouselItemAnchors = this.carouselItemAnchors;
     carouselItemAnchors.forEach((anchor, index) => {
-      if (index === currentIndex) {
+      if (index === this.currentIndex) {
         anchor.tabIndex = 0;
       } else {
         anchor.tabIndex = -1;
@@ -86,6 +133,9 @@ class Carousel {
     });
   }
 
+  /**
+   * インジケーター作成
+   */
   createIndicator() {
     const totalItemCount = this.totalItemCount;
     const ul = document.createElement('ul');
@@ -104,10 +154,13 @@ class Carousel {
     this.indicatorItems = Array.prototype.slice.call(ul.children);
   }
 
-  updateIndicator(currentIndex) {
+  /**
+   * インジケーターの更新
+   */
+  updateIndicator() {
     const indicators = this.indicatorItems;
     indicators.forEach((item, index) => {
-      if (index === currentIndex) {
+      if (index === this.currentIndex) {
         item.classList.add('is-active');
       } else {
         item.classList.remove('is-active');
@@ -115,6 +168,9 @@ class Carousel {
     });
   }
 
+  /**
+   * 左右のボタンの作成
+   */
   createBtns() {
     const ul = document.createElement('ul');
     ul.className = 'carousel-btns';
@@ -127,7 +183,11 @@ class Carousel {
     this.nextBtn = ul.querySelector('.next');
   }
 
-  updateBtns(index) {
+  /**
+   * 左右のボタンの更新
+   */
+  updateBtns() {
+    const index = this.currentIndex;
     if (index !== 0) {
       this.prevBtn.classList.remove('is-none');
     } else {
@@ -139,49 +199,54 @@ class Carousel {
       this.nextBtn.classList.add('is-none');
     }
   }
-  
-  setCarouselItemsWidths() {
-    const items = this.carouselItems;
-    const resultWidths = [];
-    Array.prototype.slice.call(items).forEach(item => {
-      const width = item.clientWidth;
-      const margin = parseInt(window.getComputedStyle(item).marginRight, 10);
-      const itemOuterWidth = width + margin;
-      resultWidths.push(itemOuterWidth);
-    });
-    this.carouselItemsWidths = resultWidths;
-  }
 
-  move(index) {
+
+  /**
+   * カルーセル移動
+   */
+  move() {
+    const index = this.currentIndex;
     if (index < 0 || index >= this.totalItemCount) return;
     let position;
     if (index === 0) {
       position = 0;
     } else {
       const itemDistances = this.carouselItemsWidths.slice(0, index);
-      console.log(itemDistances);
       position = itemDistances.reduce((prev, current) => prev + current);
     }
     this.carouselMoveElement.style.transform = `translateX(-${position}px)`;
-    this.currentIndex = index;
-    this.updateBtns(index);
-    this.updateTabIndex(index);
-    this.updateIndicator(index);
   }
 
+  /**
+   * カルーセルが動いてプロパティを更新
+   * @param {number} index 
+   */
+  moveAndUpdateProperties(index) {
+    this.currentIndex = index;
+    this.move();
+    this.updateBtns();
+    this.updateTabIndex();
+    this.updateIndicator();
+  }
+
+  /**
+   * イベントリスナーを管理
+   * @param {string} type 
+   * @param {object} option 
+   */
   listener(type, option = {}) {
     const carouselContainer = this.carouselContainer;
 
-    const onceSetCarouselItemsWidths = () => {
-      if (this.isSettedCarouselItemsWidths) return;
-      this.setCarouselItemsWidths();
-    };
-
-    const listenerClick = (target, option = {}) => (e) => {
+    /**
+     * クリック系を管理
+     * @param {string} targetName 
+     * @param {object} option 
+     */
+    const listenerClick = (targetName, option = {}) => (e) => {
       e.preventDefault();
-      onceSetCarouselItemsWidths();
+      this.onceSetCarouselItemsWidths();
       let nextIndex;
-      switch (target) {
+      switch (targetName) {
         case 'next':
           nextIndex = this.currentIndex + 1;
           break;
@@ -194,15 +259,16 @@ class Carousel {
           }
           break;
         default:
-          console.error('target is not defined.');
+          console.error('targetName is not defined.');
           nextIndex = this.currentIndex;
           break;
       }
-      this.move(nextIndex);
+      this.moveAndUpdateProperties(nextIndex);
     };
 
-    const func = {
+    const funcs = {
       containerMouseover: (e) => {
+        // chromeでボタンをクリック時にマウスアウトが発生する不具合解消のため条件分岐
         if (carouselContainer.contains(e.relatedTarget)
           || (e.relatedTarget === null
             && (this.prevBtn.contains(e.target) || this.nextBtn.contains(e.target)))) return;
@@ -210,6 +276,7 @@ class Carousel {
         this.nextBtn.classList.add('is-active');
       },
       containerMouseout: (e) => {
+        // chromeでボタンをクリック時にマウスアウトが発生する不具合解消のため条件分岐
         if (carouselContainer.contains(e.relatedTarget)
           || (e.relatedTarget === null && (this.prevBtn.contains(e.target) || this.nextBtn.contains(e.target)))) return;
         this.prevBtn.classList.remove('is-active');
@@ -219,12 +286,14 @@ class Carousel {
       prevBtnClick: listenerClick('prev'),
       indicatorClick: listenerClick('indicator', option)
     }
-    return func[type];
+    return funcs[type];
   }
 
+  /**
+   * イベントリスナーを設定
+   */
   addListener() {
     const carouselContainer = this.carouselContainer;
-    // carouselContainer.addEventListener('mouseover', this.handleEvent('containerMouseover').bind(this));
     carouselContainer.addEventListener('mouseover', this.listener('containerMouseover'));
     carouselContainer.addEventListener('mouseout', this.listener('containerMouseout'));
     this.nextBtn.addEventListener('click', this.listener('nextBtnClick'));
@@ -234,13 +303,17 @@ class Carousel {
     });
   }
 
+  /**
+   * 初期処理
+   * @param {string} url 
+   */
   async init(url) {
     const json = await fetchJson(url);
     this.createCarouselMainContents(json)
-    this.updateTabIndex(this.currentIndex);
+    this.updateTabIndex();
     this.createIndicator();
     this.createBtns();
-    this.updateBtns(this.currentIndex);
+    this.updateBtns();
     this.addListener();
   }
 }
