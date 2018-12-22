@@ -1,5 +1,5 @@
-import fetchJson from './utils/fetchJson.js';
-import createCarouselItemsHtml from './createCarouselItemsHtml.js';
+import fetchJson from './utils/common/fetchJson.js';
+import CarouselUtils from './utils/CarouselUtils.js';
 
 class Carousel {
   constructor(urlRequest, container) {
@@ -88,7 +88,7 @@ class Carousel {
    * @param {object} json 
    */
   createCarouselMainContents(json) {
-    const html = createCarouselItemsHtml(json);
+    const html = CarouselUtils.createCarouselItemsHtml(json);
     this.carouselContainer.innerHTML = html;
     this.setCarouselItemsContainerToProp();
     this.setCarouselItemsAndAnchorsToProp();
@@ -119,7 +119,7 @@ class Carousel {
       ${(() => {
         let result = '';
         for (let i = 0; i < totalItemCount; i++) {
-          result += `<li class="${i === this.currentIndex ? 'is-active' : ''}"><a href="#"></a></li>`;
+          result += `<li class="${i === this.currentIndex ? CarouselUtils.CLASS_ACTIVE : ''}"><a href="#"></a></li>`;
         }
         return result;
       })()}`;
@@ -136,9 +136,9 @@ class Carousel {
     const indicators = this.indicatorItems;
     indicators.forEach((item, index) => {
       if (index === this.currentIndex) {
-        item.classList.add('is-active');
+        item.classList.add(CarouselUtils.CLASS_ACTIVE);
       } else {
-        item.classList.remove('is-active');
+        item.classList.remove(CarouselUtils.CLASS_ACTIVE);
       }
     });
   }
@@ -246,15 +246,15 @@ class Carousel {
         if (carouselContainer.contains(e.relatedTarget)
           || (e.relatedTarget === null
             && (this.prevBtn.contains(e.target) || this.nextBtn.contains(e.target)))) return;
-        this.prevBtn.classList.add('is-active');
-        this.nextBtn.classList.add('is-active');
+        this.prevBtn.classList.add(CarouselUtils.CLASS_ACTIVE);
+        this.nextBtn.classList.add(CarouselUtils.CLASS_ACTIVE);
       },
       containerMouseout: (e) => {
         // chromeでボタンをクリック時にマウスアウトが発生する不具合解消のため条件分岐
         if (carouselContainer.contains(e.relatedTarget)
           || (e.relatedTarget === null && (this.prevBtn.contains(e.target) || this.nextBtn.contains(e.target)))) return;
-        this.prevBtn.classList.remove('is-active');
-        this.nextBtn.classList.remove('is-active');
+        this.prevBtn.classList.remove(CarouselUtils.CLASS_ACTIVE);
+        this.nextBtn.classList.remove(CarouselUtils.CLASS_ACTIVE);
       },
       nextBtnClick: listenerClick('next'),
       prevBtnClick: listenerClick('prev'),
