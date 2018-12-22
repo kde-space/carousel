@@ -12,13 +12,13 @@ async function fetchJson(url) {
 
 /**
  * カルーセルアイテムのHTML作成
- * @param {Object} json 
+ * @param {Object} json
  */
 function createCarouselItemsHtml(json) {
   return `
     <div class="carousel-itemsContainer">
       <ul class="carousel-items">
-        ${json.map(item => `<li><a href="${item.linkUrl}"><img src="${item.imgPath}"></a></li>`).join('\n')}
+        ${json.map((item, index) => `<li><a href="${item.linkUrl}${index + 1}" tabindex="-1"><img src="${item.imgPath}"></a></li>`).join('\n')}
       </ul>
     </div>`;
 }
@@ -28,7 +28,9 @@ class Carousel {
   constructor(urlRequest, container) {
     this.carouselContainer = container;
     this.carouselItems = null;
-    this.indicators = null;
+    this.carouselItemAnchors = null;
+    this.indicatorContainer = null;
+    this.indicatorItems = null;
     this.prevBtn = null;
     this.nextBtn = null;
     this.carouselItemsContainer = null;
@@ -58,17 +60,30 @@ class Carousel {
     this.carouselMoveElement = itemsContainer.querySelector('.carousel-items');
   }
 
-  setCarouselItemsToProp() {
+  setCarouselItemsAndAnchorsToProp() {
     const items = this.carouselMoveElement.getElementsByTagName('li');
-    if (items.length <= 0) return;
+    const anchors = this.carouselMoveElement.getElementsByTagName('a');
+    if (items.length <= 0 || anchors.length <= 0) return;
     this.carouselItems = items;
+    this.carouselItemAnchors = Array.prototype.slice.call(anchors);
   }
 
   createCarouselMainContents(json) {
     const html = createCarouselItemsHtml(json);
     this.carouselContainer.innerHTML = html;
     this.setCarouselItemsContainerToProp();
-    this.setCarouselItemsToProp();
+    this.setCarouselItemsAndAnchorsToProp();
+  }
+
+  updateTabIndex(currentIndex) {
+    const carouselItemAnchors = this.carouselItemAnchors;
+    carouselItemAnchors.forEach((anchor, index) => {
+      if (index === currentIndex) {
+        anchor.tabIndex = 0;
+      } else {
+        anchor.tabIndex = -1;
+      }
+    });
   }
 
   createIndicator() {
@@ -85,7 +100,19 @@ class Carousel {
       })()}`;
     ul.innerHTML = liHtml;
     this.carouselItemsContainer.insertAdjacentElement('afterend', ul);
-    this.indicators = ul;
+    this.indicatorContainer = ul;
+    this.indicatorItems = Array.prototype.slice.call(ul.children);
+  }
+
+  updateIndicator(currentIndex) {
+    const indicators = this.indicatorItems;
+    indicators.forEach((item, index) => {
+      if (index === currentIndex) {
+        item.classList.add('is-active');
+      } else {
+        item.classList.remove('is-active');
+      }
+    });
   }
 
   createBtns() {
@@ -95,7 +122,7 @@ class Carousel {
       <li class="prev is-none"><a href="#"></a></li>
       <li class="next is-none"><a href="#"></a></li>`;
     ul.innerHTML = liHtml;
-    this.indicators.insertAdjacentElement('afterend', ul);
+    this.indicatorContainer.insertAdjacentElement('afterend', ul);
     this.prevBtn = ul.querySelector('.prev');
     this.nextBtn = ul.querySelector('.next');
   }
@@ -122,7 +149,6 @@ class Carousel {
       const itemOuterWidth = width + margin;
       resultWidths.push(itemOuterWidth);
     });
-    console.log('resultWidths :', resultWidths);
     this.carouselItemsWidths = resultWidths;
   }
 
@@ -132,63 +158,90 @@ class Carousel {
     if (index === 0) {
       position = 0;
     } else {
-      const itemsHasDistance = this.carouselItemsWidths.slice(0, index);
-      console.log(itemsHasDistance);
-      position = itemsHasDistance.reduce((prev, current) => prev + current);
+      const itemDistances = this.carouselItemsWidths.slice(0, index);
+      console.log(itemDistances);
+      position = itemDistances.reduce((prev, current) => prev + current);
     }
     this.carouselMoveElement.style.transform = `translateX(-${position}px)`;
     this.currentIndex = index;
     this.updateBtns(index);
+    this.updateTabIndex(index);
+    this.updateIndicator(index);
   }
 
-  listener(type) {
+  listener(type, option = {}) {
+    const carouselContainer = this.carouselContainer;
+
     const onceSetCarouselItemsWidths = () => {
       if (this.isSettedCarouselItemsWidths) return;
       this.setCarouselItemsWidths();
     };
 
-    const listenerClick = (target) => {
-      return (e) => {
-        e.preventDefault();
-        onceSetCarouselItemsWidths();
-        const nextIndex = target === 'next' ? this.currentIndex + 1 : this.currentIndex - 1;
-        this.move(nextIndex);
+    const listenerClick = (target, option = {}) => (e) => {
+      e.preventDefault();
+      onceSetCarouselItemsWidths();
+      let nextIndex;
+      switch (target) {
+        case 'next':
+          nextIndex = this.currentIndex + 1;
+          break;
+        case 'prev':
+          nextIndex = this.currentIndex - 1;
+          break;
+        case 'indicator':
+          if (option.index !== undefined) {
+            nextIndex = option.index;
+          }
+          break;
+        default:
+          console.error('target is not defined.');
+          nextIndex = this.currentIndex;
+          break;
       }
+      this.move(nextIndex);
     };
 
     const func = {
       containerMouseover: (e) => {
-        console.log('mouseover');
+        if (carouselContainer.contains(e.relatedTarget)
+          || (e.relatedTarget === null
+            && (this.prevBtn.contains(e.target) || this.nextBtn.contains(e.target)))) return;
         this.prevBtn.classList.add('is-active');
         this.nextBtn.classList.add('is-active');
       },
       containerMouseout: (e) => {
-        console.log('mouseout');
+        if (carouselContainer.contains(e.relatedTarget)
+          || (e.relatedTarget === null && (this.prevBtn.contains(e.target) || this.nextBtn.contains(e.target)))) return;
         this.prevBtn.classList.remove('is-active');
         this.nextBtn.classList.remove('is-active');
       },
       nextBtnClick: listenerClick('next'),
-      prevBtnClick: listenerClick('prev')
+      prevBtnClick: listenerClick('prev'),
+      indicatorClick: listenerClick('indicator', option)
     }
     return func[type];
   }
 
-  adListener() {
+  addListener() {
     const carouselContainer = this.carouselContainer;
     // carouselContainer.addEventListener('mouseover', this.handleEvent('containerMouseover').bind(this));
     carouselContainer.addEventListener('mouseover', this.listener('containerMouseover'));
     carouselContainer.addEventListener('mouseout', this.listener('containerMouseout'));
     this.nextBtn.addEventListener('click', this.listener('nextBtnClick'));
     this.prevBtn.addEventListener('click', this.listener('prevBtnClick'));
+    this.indicatorItems.forEach((item, index) => {
+      item.addEventListener('click', this.listener('indicatorClick', { index }));
+    });
   }
 
   async init(url) {
     const json = await fetchJson(url);
     this.createCarouselMainContents(json)
+    this.updateTabIndex(this.currentIndex);
     this.createIndicator();
     this.createBtns();
     this.updateBtns(this.currentIndex);
-    this.adListener();
+    this.addListener();
   }
 }
 
