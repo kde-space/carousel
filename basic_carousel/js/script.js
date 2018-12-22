@@ -1,4 +1,4 @@
-import Carousel from './Carousel.js';
+import Carousel from './modules/Carousel.js';
 
 function doCarousel() {
   const targets = document.querySelectorAll('.js-carousel');

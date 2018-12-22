@@ -1,29 +1,5 @@
-'use strict';
-
-async function fetchJson(url) {
-  try {
-    const res = await fetch(url);
-    if (res.ok) {
-      return res.json();
-    }
-    throw new Error(`Not res.ok... ${res.statusText}`);
-  } catch (error) {
-    throw error;
-  }
-}
-
-/**
- * カルーセルアイテムのHTML作成
- * @param {Object} json
- */
-function createCarouselItemsHtml(json) {
-  return `
-    <div class="carousel-itemsContainer">
-      <ul class="carousel-items">
-        ${json.map((item, index) => `<li><a href="${item.linkUrl}${index + 1}" tabindex="-1"><img src="${item.imgPath}"></a></li>`).join('\n')}
-      </ul>
-    </div>`;
-}
+import fetchJson from './utils/fetchJson.js';
+import createCarouselItemsHtml from './createCarouselItemsHtml.js';
 
 class Carousel {
   constructor(urlRequest, container) {
@@ -85,7 +61,6 @@ class Carousel {
     if (this.isSettedCarouselItemsWidths) return;
     this.setCarouselItemsWidths();
   }
-
 
   /**
    * thisから参照できるようにカルーセル要素群をプロパティに設定
@@ -254,9 +229,8 @@ class Carousel {
           nextIndex = this.currentIndex - 1;
           break;
         case 'indicator':
-          if (option.index !== undefined) {
-            nextIndex = option.index;
-          }
+          if (option.index === undefined || option.index === this.currentIndex) return;
+          nextIndex = option.index;
           break;
         default:
           console.error('targetName is not defined.');
