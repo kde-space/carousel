@@ -18,7 +18,7 @@ img {
 .carousel {
   position: relative;
   width: 1000px;
-  margin: 0 auto;
+  margin: 0 auto 60px;
   border: 1px solid #000;
 
   &-itemsContainer {
@@ -27,7 +27,7 @@ img {
 
   &-items {
     display: flex;
-    transition: transform 1s ease-in-out;
+    transition: transform 0.5s ease-in-out;
 
     > li:not(:last-child) {
       margin-right: 20px;
