@@ -1,4 +1,4 @@
-import fetchJson from './utils/common/fetchJson.js';
+import fetchJson from './utils/fetchJson.js';
 
 /**
  * カルーセルアイテムのHTML作成
@@ -15,6 +15,9 @@ function createCarouselItemsHtml(json) {
 
 const CLASS_ACTIVE = 'is-active';
 
+/**
+ * カルーセル
+ */
 class Carousel {
   constructor(urlRequest, container) {
     this.carouselContainer = container;
@@ -51,6 +54,14 @@ class Carousel {
    */
   get isSettedCarouselItemsWidths() {
     return this.carouselItemsWidths.length !== 0;
+  }
+
+  get isFirstCurrentIndex() {
+    return this.currentIndex === 0;
+  }
+
+  get isLastCurrentIndex() {
+    return this.currentIndex === this.totalItemCount - 1;
   }
 
   /**
@@ -176,13 +187,12 @@ class Carousel {
    * 左右のボタンの更新
    */
   updateBtns() {
-    const index = this.currentIndex;
-    if (index !== 0) {
+    if (!this.isFirstCurrentIndex) {
       this.prevBtn.classList.remove('is-none');
     } else {
       this.prevBtn.classList.add('is-none');
     }
-    if (index !== this.totalItemCount - 1) {
+    if (!this.isLastCurrentIndex) {
       this.nextBtn.classList.remove('is-none');
     } else {
       this.nextBtn.classList.add('is-none');
@@ -194,13 +204,13 @@ class Carousel {
    * カルーセル移動
    */
   move() {
-    const index = this.currentIndex;
-    if (index < 0 || index >= this.totalItemCount) return;
+    const currentIndex = this.currentIndex;
+    if (currentIndex < 0 || currentIndex >= this.totalItemCount) return;
     let position;
-    if (index === 0) {
+    if (this.isFirstCurrentIndex) {
       position = 0;
     } else {
-      const itemDistances = this.carouselItemsWidths.slice(0, index);
+      const itemDistances = this.carouselItemsWidths.slice(0, currentIndex);
       position = itemDistances.reduce((prev, current) => prev + current);
     }
     this.carouselMoveElement.style.transform = `translateX(-${position}px)`;
@@ -231,7 +241,7 @@ class Carousel {
      * @param {string} targetName 
      * @param {object} option 
      */
-    const listenerClick = (targetName, option = {}) => (e) => {
+    const listenerClick = (targetName) => (e) => {
       e.preventDefault();
       this.onceSetCarouselItemsWidths();
       let nextIndex;
@@ -270,9 +280,21 @@ class Carousel {
         this.prevBtn.classList.remove(CLASS_ACTIVE);
         this.nextBtn.classList.remove(CLASS_ACTIVE);
       },
+      btnMouseover: (e) => {
+        const target = e.target;
+        target.classList.add(CLASS_ACTIVE);
+      },
+      btnMouseout: (e) => {
+        const target = e.target;
+        const { btnType } = option;
+        // chromeでボタンをクリック時にマウスアウトが発生する不具合解消のため条件分岐
+        if (btnType === 'next' && e.relatedTarget === null && !this.isLastCurrentIndex ) return;
+        if (btnType === 'prev' && e.relatedTarget === null && !this.isFirstCurrentIndex ) return;
+        target.classList.remove(CLASS_ACTIVE);
+      },
       nextBtnClick: listenerClick('next'),
       prevBtnClick: listenerClick('prev'),
-      indicatorClick: listenerClick('indicator', option)
+      indicatorClick: listenerClick('indicator')
     }
     return funcs[type];
   }
@@ -286,6 +308,12 @@ class Carousel {
     carouselContainer.addEventListener('mouseout', this.listener('containerMouseout'));
     this.nextBtn.addEventListener('click', this.listener('nextBtnClick'));
     this.prevBtn.addEventListener('click', this.listener('prevBtnClick'));
+    [this.nextBtn, this.prevBtn].forEach(item => {
+      const anchor = item.querySelector('a');
+      const isNextBtn = item.classList.contains('next');
+      anchor.addEventListener('mouseover', this.listener('btnMouseover'));
+      anchor.addEventListener('mouseout', this.listener('btnMouseout', { btnType: isNextBtn ? 'next' : 'prev' }));
+    })
     this.indicatorItems.forEach((item, index) => {
       item.addEventListener('click', this.listener('indicatorClick', { index }));
     });
