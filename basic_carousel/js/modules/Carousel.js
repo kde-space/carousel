@@ -1,5 +1,19 @@
 import fetchJson from './utils/common/fetchJson.js';
-import CarouselUtils from './utils/CarouselUtils.js';
+
+/**
+ * カルーセルアイテムのHTML作成
+ * @param {Object} json
+ */
+function createCarouselItemsHtml(json) {
+  return `
+    <div class="carousel-itemsContainer">
+      <ul class="carousel-items">
+        ${json.map((item, index) => `<li><a href="${item.linkUrl}${index + 1}" tabindex="-1"><img src="${item.imgPath}"></a></li>`).join('\n')}
+      </ul>
+    </div>`;
+}
+
+const CLASS_ACTIVE = 'is-active';
 
 class Carousel {
   constructor(urlRequest, container) {
@@ -88,7 +102,7 @@ class Carousel {
    * @param {object} json 
    */
   createCarouselMainContents(json) {
-    const html = CarouselUtils.createCarouselItemsHtml(json);
+    const html = createCarouselItemsHtml(json);
     this.carouselContainer.innerHTML = html;
     this.setCarouselItemsContainerToProp();
     this.setCarouselItemsAndAnchorsToProp();
@@ -119,7 +133,7 @@ class Carousel {
       ${(() => {
         let result = '';
         for (let i = 0; i < totalItemCount; i++) {
-          result += `<li class="${i === this.currentIndex ? CarouselUtils.CLASS_ACTIVE : ''}"><a href="#"></a></li>`;
+          result += `<li class="${i === this.currentIndex ? CLASS_ACTIVE : ''}"><a href="#"></a></li>`;
         }
         return result;
       })()}`;
@@ -136,9 +150,9 @@ class Carousel {
     const indicators = this.indicatorItems;
     indicators.forEach((item, index) => {
       if (index === this.currentIndex) {
-        item.classList.add(CarouselUtils.CLASS_ACTIVE);
+        item.classList.add(CLASS_ACTIVE);
       } else {
-        item.classList.remove(CarouselUtils.CLASS_ACTIVE);
+        item.classList.remove(CLASS_ACTIVE);
       }
     });
   }
@@ -246,15 +260,15 @@ class Carousel {
         if (carouselContainer.contains(e.relatedTarget)
           || (e.relatedTarget === null
             && (this.prevBtn.contains(e.target) || this.nextBtn.contains(e.target)))) return;
-        this.prevBtn.classList.add(CarouselUtils.CLASS_ACTIVE);
-        this.nextBtn.classList.add(CarouselUtils.CLASS_ACTIVE);
+        this.prevBtn.classList.add(CLASS_ACTIVE);
+        this.nextBtn.classList.add(CLASS_ACTIVE);
       },
       containerMouseout: (e) => {
         // chromeでボタンをクリック時にマウスアウトが発生する不具合解消のため条件分岐
         if (carouselContainer.contains(e.relatedTarget)
           || (e.relatedTarget === null && (this.prevBtn.contains(e.target) || this.nextBtn.contains(e.target)))) return;
-        this.prevBtn.classList.remove(CarouselUtils.CLASS_ACTIVE);
-        this.nextBtn.classList.remove(CarouselUtils.CLASS_ACTIVE);
+        this.prevBtn.classList.remove(CLASS_ACTIVE);
+        this.nextBtn.classList.remove(CLASS_ACTIVE);
       },
       nextBtnClick: listenerClick('next'),
       prevBtnClick: listenerClick('prev'),
