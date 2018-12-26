@@ -9,6 +9,6 @@ function doCarousel() {
   });
 }
 
-window.addEventListener('load', () => {
+document.addEventListener('DOMContentLoaded', () => {
   doCarousel();
 });
