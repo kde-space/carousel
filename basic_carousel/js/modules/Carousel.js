@@ -8,7 +8,7 @@ function createCarouselItemsHtml(json) {
   return `
     <div class="carousel-itemsContainer">
       <ul class="carousel-items">
-        ${json.map((item, index) => `<li><a href="${item.linkUrl}${index + 1}" tabindex="-1"><img src="${item.imgPath}" width="1000" height="400"></a></li>`).join('\n')}
+        ${json.map((item, index) => `<li><a href="${item.linkUrl}${index + 1}" tabindex="-1"><img src="${item.imgPath}"></a></li>`).join('\n')}
       </ul>
     </div>`;
 }
