@@ -29,6 +29,10 @@ img {
     display: flex;
     transition: transform 0.5s ease-in-out;
 
+    li {
+      width: 1000px;
+    }
+
     > li:not(:last-child) {
       margin-right: 20px;
     }
