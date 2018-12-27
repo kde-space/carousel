@@ -29,7 +29,6 @@ class Carousel {
     this.nextBtn = null;
     this.carouselItemsContainer = null;
     this.carouselMoveElement = null;
-    this.carouselContainerWidth = null;
     this.carouselItemsWidths = [];
     this.currentIndex = 0;
     this.init(urlRequest);
